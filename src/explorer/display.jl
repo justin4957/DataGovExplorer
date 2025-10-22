@@ -131,14 +131,12 @@ function display_table(df::DataFrame; max_rows::Int=20, show_summary::Bool=true)
         println("\nShowing first $max_rows of $(nrow(df_display)) rows:")
         pretty_table(first(df_display, max_rows),
             maximum_number_of_columns=10,
-            maximum_number_of_rows=max_rows,
-            crop=:horizontal)
+            maximum_number_of_rows=max_rows)
         println("\n... $(nrow(df_display) - max_rows) more rows (use export to save all)")
     else
         println()
         pretty_table(df_display,
-            maximum_number_of_columns=10,
-            crop=:horizontal)
+            maximum_number_of_columns=10)
     end
 end
 

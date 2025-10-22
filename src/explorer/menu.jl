@@ -3,7 +3,7 @@ Menu navigation and interaction logic for the interactive explorer
 """
 
 """
-Interactive menu for exploring organizations
+Interactive menu for exploring organizations with pagination and search
 """
 function explore_organizations(client::CKANClient)
     orgs = get_organizations(client)
@@ -15,16 +15,53 @@ function explore_organizations(client::CKANClient)
         return
     end
 
+    # Pagination state
+    page_size = 25
+    current_page = 1
+    filtered_orgs = orgs
+    search_term = ""
+
     # Loop to allow browsing multiple organizations
     while true
-        show_header("DATA.GOV ORGANIZATIONS ($(nrow(orgs)) total)")
+        total_orgs = nrow(filtered_orgs)
+        total_pages = ceil(Int, total_orgs / page_size)
+        start_idx = (current_page - 1) * page_size + 1
+        end_idx = min(current_page * page_size, total_orgs)
 
-        # Show numbered list instead of table for better readability
-        display_numbered_list(orgs, title_col=:title, name_col=:name)
+        # Get current page of organizations
+        page_orgs = filtered_orgs[start_idx:end_idx, :]
+
+        # Show header with search info
+        header_text = if isempty(search_term)
+            "DATA.GOV ORGANIZATIONS ($(total_orgs) total)"
+        else
+            "SEARCH RESULTS: \"$search_term\" ($(total_orgs) found)"
+        end
+        show_header(header_text)
+
+        # Show page info
+        if total_pages > 1
+            println("\n📄 Page $current_page of $total_pages (showing $(start_idx)-$(end_idx) of $total_orgs)")
+        end
+
+        # Show numbered list for current page
+        display_numbered_list(page_orgs, title_col=:title, name_col=:name)
 
         println("\n📌 NAVIGATION:")
-        println("  • Type a number (1-$(nrow(orgs))) to view organization datasets")
-        println("  • Enter an organization name to search")
+        println("  • Type a number (1-$(nrow(page_orgs))) to view organization datasets")
+        println("  • Type 'search <term>' or 's <term>' to filter organizations")
+        if !isempty(search_term)
+            println("  • Type 'clear' or 'c' to clear search filter")
+        end
+        if total_pages > 1
+            if current_page < total_pages
+                println("  • Type 'next' or 'n' for next page")
+            end
+            if current_page > 1
+                println("  • Type 'prev' or 'p' for previous page")
+            end
+            println("  • Type 'page <number>' to jump to specific page")
+        end
         println("  • Type 'table' or 't' to see detailed table view")
         println("  • Type 'export' or 'e' to save organization list")
         println("  • Type 'back' or 'b' to return to main menu")
@@ -35,26 +72,76 @@ function explore_organizations(client::CKANClient)
         if choice in ["back", "b", ""]
             break
         elseif choice in ["export", "e"]
-            export_data(orgs, "datagov_organizations.csv")
-            print_success("Exported to datagov_organizations.csv")
+            export_data(filtered_orgs, "datagov_organizations.csv")
+            print_success("Exported $(nrow(filtered_orgs)) organizations to datagov_organizations.csv")
             println("\nPress Enter to continue...")
             readline()
         elseif choice in ["table", "t"]
-            # Show detailed table view
-            display_table(orgs, max_rows=20, show_summary=true)
+            # Show detailed table view for current page
+            display_table(page_orgs, max_rows=50, show_summary=true)
             println("\nPress Enter to continue...")
             readline()
+        elseif choice in ["next", "n"] && current_page < total_pages
+            current_page += 1
+        elseif choice in ["prev", "p"] && current_page > 1
+            current_page -= 1
+        elseif choice in ["clear", "c"] && !isempty(search_term)
+            # Clear search filter
+            filtered_orgs = orgs
+            search_term = ""
+            current_page = 1
+            print_success("Search filter cleared")
+        elseif startswith(lowercase(choice), "page ")
+            # Jump to specific page
+            page_num_str = strip(choice[6:end])
+            page_num = tryparse(Int, page_num_str)
+            if !isnothing(page_num) && 1 <= page_num <= total_pages
+                current_page = page_num
+                print_success("Jumped to page $page_num")
+            else
+                print_warning("Invalid page number. Valid range: 1-$total_pages")
+                println("\nPress Enter to continue...")
+                readline()
+            end
+        elseif startswith(lowercase(choice), "search ") || startswith(lowercase(choice), "s ")
+            # Search/filter organizations
+            search_term = if startswith(lowercase(choice), "search ")
+                String(strip(choice[8:end]))
+            else
+                String(strip(choice[3:end]))
+            end
+
+            if !isempty(search_term)
+                # Filter by title or name (case insensitive)
+                search_lower = lowercase(search_term)
+                mask = [occursin(search_lower, lowercase(string(row.title))) ||
+                        occursin(search_lower, lowercase(string(row.name))) ||
+                        occursin(search_lower, lowercase(string(row.description)))
+                        for row in eachrow(orgs)]
+                filtered_orgs = orgs[mask, :]
+                current_page = 1
+
+                if nrow(filtered_orgs) == 0
+                    print_warning("No organizations found matching \"$search_term\"")
+                    filtered_orgs = orgs
+                    search_term = ""
+                    println("\nPress Enter to continue...")
+                    readline()
+                else
+                    print_success("Found $(nrow(filtered_orgs)) organizations matching \"$search_term\"")
+                end
+            end
         else
-            # Check if it's a number
+            # Check if it's a number (relative to current page)
             idx = tryparse(Int, choice)
-            if !isnothing(idx) && 1 <= idx <= nrow(orgs)
-                # Direct index selection
-                org_name = orgs[idx, :name]
+            if !isnothing(idx) && 1 <= idx <= nrow(page_orgs)
+                # Direct index selection from current page
+                org_name = page_orgs[idx, :name]
                 explore_organization_datasets(client, org_name)
             else
-                # Fuzzy search by name
-                org_names = orgs.name
-                org_titles = orgs.title
+                # Fuzzy search by name across all filtered orgs
+                org_names = filtered_orgs.name
+                org_titles = filtered_orgs.title
 
                 result = get_validated_name(
                     "Confirm organization name: ",
