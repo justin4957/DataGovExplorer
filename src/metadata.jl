@@ -40,9 +40,31 @@ function get_packages(
         # For full queries, use package_search with pagination
         packages = fetch_all_pages(client, "action/package_search", params)
 
-        # Convert to DataFrame
+        # Convert to DataFrame with safe field access
         if !isempty(packages)
-            df = DataFrame(packages)
+            rows = []
+            for pkg in packages
+                row = Dict(
+                    :name => get(pkg, :name, ""),
+                    :title => get(pkg, :title, ""),
+                    :id => get(pkg, :id, ""),
+                    :notes => get(pkg, :notes, ""),
+                    :author => get(pkg, :author, ""),
+                    :maintainer => get(pkg, :maintainer, ""),
+                    :license_title => get(pkg, :license_title, ""),
+                    :metadata_created => get(pkg, :metadata_created, ""),
+                    :metadata_modified => get(pkg, :metadata_modified, ""),
+                    :num_resources => get(pkg, :num_resources, 0),
+                    :num_tags => get(pkg, :num_tags, 0),
+                    :organization => haskey(pkg, :organization) && !isnothing(pkg.organization) ?
+                        get(pkg.organization, :title, get(pkg.organization, :name, "")) : "",
+                    :owner_org => get(pkg, :owner_org, ""),
+                    :state => get(pkg, :state, ""),
+                    :type => get(pkg, :type, "")
+                )
+                push!(rows, row)
+            end
+            df = DataFrame(rows)
         else
             df = DataFrame()
         end
@@ -116,7 +138,31 @@ function search_packages(
     packages = fetch_all_pages(client, "action/package_search", params)
 
     if !isempty(packages)
-        return DataFrame(packages)
+        # Convert to DataFrame with safe field access
+        # Extract common fields that are most useful
+        rows = []
+        for pkg in packages
+            row = Dict(
+                :name => get(pkg, :name, ""),
+                :title => get(pkg, :title, ""),
+                :id => get(pkg, :id, ""),
+                :notes => get(pkg, :notes, ""),
+                :author => get(pkg, :author, ""),
+                :maintainer => get(pkg, :maintainer, ""),
+                :license_title => get(pkg, :license_title, ""),
+                :metadata_created => get(pkg, :metadata_created, ""),
+                :metadata_modified => get(pkg, :metadata_modified, ""),
+                :num_resources => get(pkg, :num_resources, 0),
+                :num_tags => get(pkg, :num_tags, 0),
+                :organization => haskey(pkg, :organization) && !isnothing(pkg.organization) ?
+                    get(pkg.organization, :title, get(pkg.organization, :name, "")) : "",
+                :owner_org => get(pkg, :owner_org, ""),
+                :state => get(pkg, :state, ""),
+                :type => get(pkg, :type, "")
+            )
+            push!(rows, row)
+        end
+        return DataFrame(rows)
     else
         return DataFrame()
     end
@@ -149,7 +195,22 @@ function get_organizations(
     organizations = get(response, :result, [])
 
     if !isempty(organizations)
-        df = DataFrame(organizations)
+        rows = []
+        for org in organizations
+            row = Dict(
+                :name => get(org, :name, ""),
+                :title => get(org, :title, ""),
+                :id => get(org, :id, ""),
+                :description => get(org, :description, ""),
+                :package_count => get(org, :package_count, 0),
+                :created => get(org, :created, ""),
+                :state => get(org, :state, ""),
+                :approval_status => get(org, :approval_status, ""),
+                :type => get(org, :type, "")
+            )
+            push!(rows, row)
+        end
+        df = DataFrame(rows)
     else
         df = DataFrame()
     end
@@ -187,7 +248,21 @@ function get_groups(
     groups = get(response, :result, [])
 
     if !isempty(groups)
-        df = DataFrame(groups)
+        rows = []
+        for grp in groups
+            row = Dict(
+                :name => get(grp, :name, ""),
+                :title => get(grp, :title, ""),
+                :id => get(grp, :id, ""),
+                :description => get(grp, :description, ""),
+                :package_count => get(grp, :package_count, 0),
+                :created => get(grp, :created, ""),
+                :state => get(grp, :state, ""),
+                :type => get(grp, :type, "")
+            )
+            push!(rows, row)
+        end
+        df = DataFrame(rows)
     else
         df = DataFrame()
     end
@@ -229,7 +304,18 @@ function get_tags(
         if !isempty(tags) && isa(tags[1], String)
             df = DataFrame(name=tags)
         else
-            df = DataFrame(tags)
+            # Handle tag objects with potentially missing fields
+            rows = []
+            for tag in tags
+                row = Dict(
+                    :name => get(tag, :name, ""),
+                    :id => get(tag, :id, ""),
+                    :vocabulary_id => get(tag, :vocabulary_id, ""),
+                    :display_name => get(tag, :display_name, get(tag, :name, ""))
+                )
+                push!(rows, row)
+            end
+            df = DataFrame(rows)
         end
     else
         df = DataFrame()
