@@ -2,6 +2,8 @@
 
 A Julia-based interactive CLI tool for exploring and downloading datasets from the [data.gov catalog](https://catalog.data.gov). Built on the CKAN API, this tool provides an intuitive command-line interface for browsing thousands of government datasets.
 
+<img width="1053" height="640" alt="Screenshot 2025-10-22 at 10 30 39 AM" src="https://github.com/user-attachments/assets/af34b1c9-0376-4413-9913-c6f51fdc7114" />
+
 ## Features
 
 - **Interactive CLI Explorer**: Menu-driven interface for browsing datasets
@@ -69,6 +71,7 @@ export_to_csv(climate_data, "climate_datasets.csv")
 ## Usage Examples
 
 ### Example 1: Search for Datasets
+<img width="1022" height="762" alt="Screenshot 2025-10-22 at 10 30 30 AM" src="https://github.com/user-attachments/assets/d0ec15cf-3599-4184-b5d4-53a468936de4" />
 
 ```julia
 using DataGovExplorer
