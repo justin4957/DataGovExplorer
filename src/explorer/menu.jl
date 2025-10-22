@@ -63,40 +63,66 @@ function explore_organization_datasets(client::CKANClient, org_name::String)
         return
     end
 
-    display_table(datasets, max_rows=20, show_summary=true)
+    # Loop to allow browsing multiple datasets
+    while true
+        display_table(datasets, max_rows=20, show_summary=true)
 
-    println("\n📌 NAVIGATION:")
-    println("  • Enter a dataset name to view details")
-    println("  • Type 'export' or 'e' to save dataset list")
-    println("  • Type 'back' or 'b' to return")
+        println("\n📌 NAVIGATION:")
+        println("  • Type a number (1-$(nrow(datasets))) to view dataset details")
+        println("  • Enter a dataset name to view details")
+        println("  • Type 'list' or 'l' to see numbered list")
+        println("  • Type 'export' or 'e' to save dataset list")
+        println("  • Type 'back' or 'b' to return")
 
-    print("\nYour choice: ")
-    choice = strip(readline())
+        print("\nYour choice: ")
+        choice = String(strip(readline()))
 
-    if choice in ["back", "b", ""]
-        return
-    elseif choice in ["export", "e"]
-        filename = "org_$(org_name)_datasets.csv"
-        export_data(datasets, filename)
-        print_success("Exported to $filename")
-        println("\nPress Enter to continue...")
-        readline()
-    else
-        # Validate dataset name with fuzzy matching
-        if haskey(datasets, :name)
-            dataset_names = datasets.name
-            dataset_titles = haskey(datasets, :title) ? datasets.title : datasets.name
+        if choice in ["back", "b", ""]
+            break
+        elseif choice in ["export", "e"]
+            filename = "org_$(org_name)_datasets.csv"
+            export_data(datasets, filename)
+            print_success("Exported to $filename")
+            println("\nPress Enter to continue...")
+            readline()
+        elseif choice in ["list", "l"]
+            # Show numbered list of datasets
+            println("\n📋 DATASETS FROM '$org_name':")
+            for (i, row) in enumerate(eachrow(datasets))
+                if i <= 50
+                    title = haskey(row, :title) ? row.title : row.name
+                    println("  [$i] $(title)")
+                end
+            end
+            if nrow(datasets) > 50
+                println("  ... and $(nrow(datasets) - 50) more")
+            end
+            println()
+        else
+            # Check if it's a number
+            idx = tryparse(Int, choice)
+            if !isnothing(idx) && 1 <= idx <= nrow(datasets)
+                # Direct index selection
+                dataset_name = datasets[idx, :name]
+                view_dataset_details(client, dataset_name)
+            else
+                # Validate dataset name with fuzzy matching
+                if haskey(datasets, :name)
+                    dataset_names = datasets.name
+                    dataset_titles = haskey(datasets, :title) ? datasets.title : datasets.name
 
-            result = get_validated_name(
-                "Confirm dataset name: ",
-                dataset_names,
-                dataset_titles,
-                allow_empty=true,
-                fuzzy_threshold=0.6
-            )
+                    result = get_validated_name(
+                        "Confirm dataset name: ",
+                        dataset_names,
+                        dataset_titles,
+                        allow_empty=true,
+                        fuzzy_threshold=0.6
+                    )
 
-            if !isnothing(result[1])
-                view_dataset_details(client, result[1])
+                    if !isnothing(result[1])
+                        view_dataset_details(client, result[1])
+                    end
+                end
             end
         end
     end
@@ -148,7 +174,7 @@ function search_datasets_menu(client::CKANClient)
     println("  Or type 'back' or 'b' to return")
     print("\nSearch query: ")
 
-    query = strip(readline())
+    query = String(strip(readline()))
 
     if query in ["back", "b", ""]
         return
@@ -169,41 +195,67 @@ function search_datasets_menu(client::CKANClient)
         return
     end
 
-    display_table(results, max_rows=20, show_summary=true)
+    # Loop to allow browsing multiple datasets
+    while true
+        display_table(results, max_rows=20, show_summary=true)
 
-    println("\n📌 OPTIONS:")
-    println("  • Enter a dataset name to view details")
-    println("  • Type 'export' or 'e' to save search results")
-    println("  • Type 'back' or 'b' to return")
+        println("\n📌 OPTIONS:")
+        println("  • Type a number (1-$(nrow(results))) to view dataset details")
+        println("  • Enter a dataset name to view details")
+        println("  • Type 'list' or 'l' to see numbered list")
+        println("  • Type 'export' or 'e' to save search results")
+        println("  • Type 'back' or 'b' to return")
 
-    print("\nYour choice: ")
-    choice = strip(readline())
+        print("\nYour choice: ")
+        choice = String(strip(readline()))
 
-    if choice in ["back", "b", ""]
-        return
-    elseif choice in ["export", "e"]
-        safe_query = replace(query, r"[^a-zA-Z0-9]" => "_")
-        filename = "search_$(safe_query)_results.csv"
-        export_data(results, filename)
-        print_success("Exported to $filename")
-        println("\nPress Enter to continue...")
-        readline()
-    else
-        # Validate dataset name with fuzzy matching
-        if haskey(results, :name)
-            dataset_names = results.name
-            dataset_titles = haskey(results, :title) ? results.title : results.name
+        if choice in ["back", "b", ""]
+            break
+        elseif choice in ["export", "e"]
+            safe_query = replace(query, r"[^a-zA-Z0-9]" => "_")
+            filename = "search_$(safe_query)_results.csv"
+            export_data(results, filename)
+            print_success("Exported to $filename")
+            println("\nPress Enter to continue...")
+            readline()
+        elseif choice in ["list", "l"]
+            # Show numbered list of datasets
+            println("\n📋 SEARCH RESULTS:")
+            for (i, row) in enumerate(eachrow(results))
+                if i <= 50  # Limit to first 50
+                    title = haskey(row, :title) ? row.title : row.name
+                    println("  [$i] $(title)")
+                end
+            end
+            if nrow(results) > 50
+                println("  ... and $(nrow(results) - 50) more")
+            end
+            println()
+        else
+            # Check if it's a number
+            idx = tryparse(Int, choice)
+            if !isnothing(idx) && 1 <= idx <= nrow(results)
+                # Direct index selection
+                dataset_name = results[idx, :name]
+                view_dataset_details(client, dataset_name)
+            else
+                # Validate dataset name with fuzzy matching
+                if haskey(results, :name)
+                    dataset_names = results.name
+                    dataset_titles = haskey(results, :title) ? results.title : results.name
 
-            result = get_validated_name(
-                "Confirm dataset name: ",
-                dataset_names,
-                dataset_titles,
-                allow_empty=true,
-                fuzzy_threshold=0.6
-            )
+                    result = get_validated_name(
+                        "Confirm dataset name: ",
+                        dataset_names,
+                        dataset_titles,
+                        allow_empty=true,
+                        fuzzy_threshold=0.6
+                    )
 
-            if !isnothing(result[1])
-                view_dataset_details(client, result[1])
+                    if !isnothing(result[1])
+                        view_dataset_details(client, result[1])
+                    end
+                end
             end
         end
     end
@@ -273,41 +325,67 @@ function browse_datasets_by_tag(client::CKANClient, tag_name::String)
         return
     end
 
-    display_table(datasets, max_rows=20, show_summary=true)
+    # Loop to allow browsing multiple datasets
+    while true
+        display_table(datasets, max_rows=20, show_summary=true)
 
-    println("\n📌 OPTIONS:")
-    println("  • Enter a dataset name to view details")
-    println("  • Type 'export' or 'e' to save dataset list")
-    println("  • Type 'back' or 'b' to return")
+        println("\n📌 OPTIONS:")
+        println("  • Type a number (1-$(nrow(datasets))) to view dataset details")
+        println("  • Enter a dataset name to view details")
+        println("  • Type 'list' or 'l' to see numbered list")
+        println("  • Type 'export' or 'e' to save dataset list")
+        println("  • Type 'back' or 'b' to return")
 
-    print("\nYour choice: ")
-    choice = strip(readline())
+        print("\nYour choice: ")
+        choice = String(strip(readline()))
 
-    if choice in ["back", "b", ""]
-        return
-    elseif choice in ["export", "e"]
-        safe_tag = replace(tag_name, r"[^a-zA-Z0-9]" => "_")
-        filename = "tag_$(safe_tag)_datasets.csv"
-        export_data(datasets, filename)
-        print_success("Exported to $filename")
-        println("\nPress Enter to continue...")
-        readline()
-    else
-        # Validate dataset name with fuzzy matching
-        if haskey(datasets, :name)
-            dataset_names = datasets.name
-            dataset_titles = haskey(datasets, :title) ? datasets.title : datasets.name
+        if choice in ["back", "b", ""]
+            break
+        elseif choice in ["export", "e"]
+            safe_tag = replace(tag_name, r"[^a-zA-Z0-9]" => "_")
+            filename = "tag_$(safe_tag)_datasets.csv"
+            export_data(datasets, filename)
+            print_success("Exported to $filename")
+            println("\nPress Enter to continue...")
+            readline()
+        elseif choice in ["list", "l"]
+            # Show numbered list of datasets
+            println("\n📋 DATASETS WITH TAG '$tag_name':")
+            for (i, row) in enumerate(eachrow(datasets))
+                if i <= 50
+                    title = haskey(row, :title) ? row.title : row.name
+                    println("  [$i] $(title)")
+                end
+            end
+            if nrow(datasets) > 50
+                println("  ... and $(nrow(datasets) - 50) more")
+            end
+            println()
+        else
+            # Check if it's a number
+            idx = tryparse(Int, choice)
+            if !isnothing(idx) && 1 <= idx <= nrow(datasets)
+                # Direct index selection
+                dataset_name = datasets[idx, :name]
+                view_dataset_details(client, dataset_name)
+            else
+                # Validate dataset name with fuzzy matching
+                if haskey(datasets, :name)
+                    dataset_names = datasets.name
+                    dataset_titles = haskey(datasets, :title) ? datasets.title : datasets.name
 
-            result = get_validated_name(
-                "Confirm dataset name: ",
-                dataset_names,
-                dataset_titles,
-                allow_empty=true,
-                fuzzy_threshold=0.6
-            )
+                    result = get_validated_name(
+                        "Confirm dataset name: ",
+                        dataset_names,
+                        dataset_titles,
+                        allow_empty=true,
+                        fuzzy_threshold=0.6
+                    )
 
-            if !isnothing(result[1])
-                view_dataset_details(client, result[1])
+                    if !isnothing(result[1])
+                        view_dataset_details(client, result[1])
+                    end
+                end
             end
         end
     end

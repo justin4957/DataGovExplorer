@@ -47,37 +47,60 @@ function interactive_explorer()
             print_loaded("Fetched $(nrow(recent)) datasets")
 
             if nrow(recent) > 0
-                display_table(recent, max_rows=20, show_summary=true)
+                # Loop to allow browsing multiple datasets
+                while true
+                    display_table(recent, max_rows=20, show_summary=true)
 
-                println("\n📌 OPTIONS:")
-                println("  • Enter a dataset name to view details")
-                println("  • Type 'export' or 'e' to save dataset list")
-                println("  • Press Enter to return to main menu")
+                    println("\n📌 OPTIONS:")
+                    println("  • Type a number (1-$(nrow(recent))) to view dataset details")
+                    println("  • Enter a dataset name to view details")
+                    println("  • Type 'list' or 'l' to see numbered list")
+                    println("  • Type 'export' or 'e' to save dataset list")
+                    println("  • Press Enter to return to main menu")
 
-                print("\nYour choice: ")
-                dataset_choice = strip(readline())
+                    print("\nYour choice: ")
+                    dataset_choice = String(strip(readline()))
 
-                if dataset_choice in ["export", "e"]
-                    export_data(recent, "recent_datasets.csv")
-                    print_success("Exported to recent_datasets.csv")
-                    println("\nPress Enter to continue...")
-                    readline()
-                elseif !isempty(dataset_choice)
-                    # Validate dataset name
-                    if haskey(recent, :name)
-                        dataset_names = recent.name
-                        dataset_titles = haskey(recent, :title) ? recent.title : recent.name
+                    if dataset_choice == ""
+                        break
+                    elseif dataset_choice in ["export", "e"]
+                        export_data(recent, "recent_datasets.csv")
+                        print_success("Exported to recent_datasets.csv")
+                        println("\nPress Enter to continue...")
+                        readline()
+                    elseif dataset_choice in ["list", "l"]
+                        # Show numbered list of datasets
+                        println("\n📋 RECENT DATASETS:")
+                        for (i, row) in enumerate(eachrow(recent))
+                            title = haskey(row, :title) ? row.title : row.name
+                            println("  [$i] $(title)")
+                        end
+                        println()
+                    else
+                        # Check if it's a number
+                        idx = tryparse(Int, dataset_choice)
+                        if !isnothing(idx) && 1 <= idx <= nrow(recent)
+                            # Direct index selection
+                            dataset_name = recent[idx, :name]
+                            view_dataset_details(client, dataset_name)
+                        elseif !isempty(dataset_choice)
+                            # Validate dataset name
+                            if haskey(recent, :name)
+                                dataset_names = recent.name
+                                dataset_titles = haskey(recent, :title) ? recent.title : recent.name
 
-                        result = get_validated_name(
-                            "Confirm dataset name: ",
-                            dataset_names,
-                            dataset_titles,
-                            allow_empty=true,
-                            fuzzy_threshold=0.6
-                        )
+                                result = get_validated_name(
+                                    "Confirm dataset name: ",
+                                    dataset_names,
+                                    dataset_titles,
+                                    allow_empty=true,
+                                    fuzzy_threshold=0.6
+                                )
 
-                        if !isnothing(result[1])
-                            view_dataset_details(client, result[1])
+                                if !isnothing(result[1])
+                                    view_dataset_details(client, result[1])
+                                end
+                            end
                         end
                     end
                 end
