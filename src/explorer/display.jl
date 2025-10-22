@@ -123,18 +123,95 @@ function display_table(df::DataFrame; max_rows::Int=20, show_summary::Bool=true)
         return
     end
 
+    # Reorder columns to show most important first
+    df_display = reorder_columns(df)
+
     # Display table
-    if nrow(df) > max_rows
-        println("\nShowing first $max_rows of $(nrow(df)) rows:")
-        pretty_table(first(df, max_rows),
+    if nrow(df_display) > max_rows
+        println("\nShowing first $max_rows of $(nrow(df_display)) rows:")
+        pretty_table(first(df_display, max_rows),
             maximum_number_of_columns=10,
-            maximum_number_of_rows=max_rows)
-        println("\n... $(nrow(df) - max_rows) more rows (use export to save all)")
+            maximum_number_of_rows=max_rows,
+            crop=:horizontal)
+        println("\n... $(nrow(df_display) - max_rows) more rows (use export to save all)")
     else
         println()
-        pretty_table(df,
-            maximum_number_of_columns=10)
+        pretty_table(df_display,
+            maximum_number_of_columns=10,
+            crop=:horizontal)
     end
+end
+
+"""
+Reorder DataFrame columns to show most important first
+"""
+function reorder_columns(df::DataFrame)
+    cols = names(df)
+
+    # Priority order for columns
+    priority_cols = [:name, :title, :package_count, :description, :num_resources,
+                     :num_tags, :organization, :author, :maintainer, :license_title,
+                     :metadata_created, :metadata_modified, :state, :type, :id]
+
+    # Build ordered column list
+    ordered_cols = Symbol[]
+
+    # Add priority columns that exist
+    for col in priority_cols
+        if col in Symbol.(cols)
+            push!(ordered_cols, col)
+        end
+    end
+
+    # Add remaining columns
+    for col in Symbol.(cols)
+        if !(col in ordered_cols)
+            push!(ordered_cols, col)
+        end
+    end
+
+    # Return reordered DataFrame
+    return df[:, ordered_cols]
+end
+
+"""
+Display a numbered list of items (organizations, datasets, etc.)
+"""
+function display_numbered_list(df::DataFrame; title_col::Symbol=:title, name_col::Symbol=:name, max_items::Int=50)
+    println()
+    for (i, row) in enumerate(eachrow(df))
+        if i > max_items
+            println("  ... and $(nrow(df) - max_items) more (type 'export' to save full list)")
+            break
+        end
+
+        # Get display text - prefer title, fallback to name
+        display_text = ""
+        if title_col in propertynames(row) && !ismissing(row[title_col]) && !isempty(string(row[title_col]))
+            display_text = string(row[title_col])
+        elseif name_col in propertynames(row) && !ismissing(row[name_col]) && !isempty(string(row[name_col]))
+            display_text = string(row[name_col])
+        else
+            display_text = "Item $i"
+        end
+
+        # Show package count if available
+        count_info = ""
+        if :package_count in propertynames(row) && !ismissing(row[:package_count])
+            count_info = " ($(row[:package_count]) datasets)"
+        elseif :num_resources in propertynames(row) && !ismissing(row[:num_resources])
+            count_info = " ($(row[:num_resources]) resources)"
+        end
+
+        # Truncate long names
+        max_length = 70
+        if length(display_text) > max_length
+            display_text = display_text[1:max_length-3] * "..."
+        end
+
+        println("  [$i] $(display_text)$(count_info)")
+    end
+    println()
 end
 
 """

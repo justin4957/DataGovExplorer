@@ -8,14 +8,6 @@ Interactive menu for exploring organizations
 function explore_organizations(client::CKANClient)
     orgs = get_organizations(client)
 
-    show_header("DATA.GOV ORGANIZATIONS ($(nrow(orgs)) total)")
-    display_table(orgs, max_rows=20, show_summary=true)
-
-    println("\n📌 NAVIGATION:")
-    println("  • Enter an organization name to view datasets")
-    println("  • Type 'back' or 'b' to return to main menu")
-    println("  • Type 'export' or 'e' to save organization list")
-
     if nrow(orgs) == 0
         print_warning("No organizations found")
         println("\nPress Enter to return...")
@@ -23,26 +15,60 @@ function explore_organizations(client::CKANClient)
         return
     end
 
-    org_names = orgs.name
-    org_titles = orgs.title
+    # Loop to allow browsing multiple organizations
+    while true
+        show_header("DATA.GOV ORGANIZATIONS ($(nrow(orgs)) total)")
 
-    result = get_validated_name(
-        "\nYour choice: ",
-        vcat(org_names, ["back", "b", "export", "e"]),
-        vcat(org_titles, ["Return to main menu", "Return to main menu", "Export organization list", "Export organization list"]),
-        allow_empty=true,
-        fuzzy_threshold=0.5
-    )
+        # Show numbered list instead of table for better readability
+        display_numbered_list(orgs, title_col=:title, name_col=:name)
 
-    if isnothing(result[1]) || result[1] in ["back", "b"]
-        return
-    elseif result[1] in ["export", "e"]
-        export_data(orgs, "datagov_organizations.csv")
-        print_success("Exported to datagov_organizations.csv")
-        println("\nPress Enter to continue...")
-        readline()
-    else
-        explore_organization_datasets(client, result[1])
+        println("\n📌 NAVIGATION:")
+        println("  • Type a number (1-$(nrow(orgs))) to view organization datasets")
+        println("  • Enter an organization name to search")
+        println("  • Type 'table' or 't' to see detailed table view")
+        println("  • Type 'export' or 'e' to save organization list")
+        println("  • Type 'back' or 'b' to return to main menu")
+
+        print("\nYour choice: ")
+        choice = String(strip(readline()))
+
+        if choice in ["back", "b", ""]
+            break
+        elseif choice in ["export", "e"]
+            export_data(orgs, "datagov_organizations.csv")
+            print_success("Exported to datagov_organizations.csv")
+            println("\nPress Enter to continue...")
+            readline()
+        elseif choice in ["table", "t"]
+            # Show detailed table view
+            display_table(orgs, max_rows=20, show_summary=true)
+            println("\nPress Enter to continue...")
+            readline()
+        else
+            # Check if it's a number
+            idx = tryparse(Int, choice)
+            if !isnothing(idx) && 1 <= idx <= nrow(orgs)
+                # Direct index selection
+                org_name = orgs[idx, :name]
+                explore_organization_datasets(client, org_name)
+            else
+                # Fuzzy search by name
+                org_names = orgs.name
+                org_titles = orgs.title
+
+                result = get_validated_name(
+                    "Confirm organization name: ",
+                    org_names,
+                    org_titles,
+                    allow_empty=true,
+                    fuzzy_threshold=0.5
+                )
+
+                if !isnothing(result[1])
+                    explore_organization_datasets(client, result[1])
+                end
+            end
+        end
     end
 end
 
