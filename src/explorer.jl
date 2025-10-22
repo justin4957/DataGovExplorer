@@ -85,9 +85,9 @@ function interactive_explorer()
                             view_dataset_details(client, dataset_name)
                         elseif !isempty(dataset_choice)
                             # Validate dataset name
-                            if haskey(recent, :name)
+                            if :name in propertynames(recent)
                                 dataset_names = recent.name
-                                dataset_titles = haskey(recent, :title) ? recent.title : recent.name
+                                dataset_titles = :title in propertynames(recent) ? recent.title : recent.name
 
                                 result = get_validated_name(
                                     "Confirm dataset name: ",

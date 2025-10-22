@@ -220,9 +220,9 @@ function explore_organization_datasets(client::CKANClient, org_name::String)
                 view_dataset_details(client, dataset_name)
             else
                 # Validate dataset name with fuzzy matching
-                if haskey(datasets, :name)
+                if :name in propertynames(datasets)
                     dataset_names = datasets.name
-                    dataset_titles = haskey(datasets, :title) ? datasets.title : datasets.name
+                    dataset_titles = :title in propertynames(datasets) ? datasets.title : datasets.name
 
                     result = get_validated_name(
                         "Confirm dataset name: ",
@@ -353,9 +353,9 @@ function search_datasets_menu(client::CKANClient)
                 view_dataset_details(client, dataset_name)
             else
                 # Validate dataset name with fuzzy matching
-                if haskey(results, :name)
+                if :name in propertynames(results)
                     dataset_names = results.name
-                    dataset_titles = haskey(results, :title) ? results.title : results.name
+                    dataset_titles = :title in propertynames(results) ? results.title : results.name
 
                     result = get_validated_name(
                         "Confirm dataset name: ",
@@ -483,9 +483,9 @@ function browse_datasets_by_tag(client::CKANClient, tag_name::String)
                 view_dataset_details(client, dataset_name)
             else
                 # Validate dataset name with fuzzy matching
-                if haskey(datasets, :name)
+                if :name in propertynames(datasets)
                     dataset_names = datasets.name
-                    dataset_titles = haskey(datasets, :title) ? datasets.title : datasets.name
+                    dataset_titles = :title in propertynames(datasets) ? datasets.title : datasets.name
 
                     result = get_validated_name(
                         "Confirm dataset name: ",
