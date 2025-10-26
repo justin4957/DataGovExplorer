@@ -4,6 +4,11 @@ Non-interactive command-line interface for DataGovExplorer
 Provides CLI commands for batch operations and scripting.
 """
 
+# Import necessary modules
+using DataFrames
+using CSV
+using JSON3
+
 """
 Output format options for CLI commands
 """
@@ -48,7 +53,7 @@ function display_cli_results(results, output_format::OutputFormat, no_color::Boo
         CSV.write(stdout, results)
     elseif output_format == PLAIN
         # Simple plain text output
-        for row in DataFrames.eachrow(results)
+        for row in eachrow(results)
             title = haskey(row, :title) ? row.title : row.name
             println(title)
         end
@@ -140,10 +145,10 @@ function cmd_search(args::Dict)
     results = DataGovExplorer.search_packages(client, query=query, rows=limit)
 
     if !no_color
-        DataGovExplorer.print_loaded("Found $(DataFrames.nrow(results)) datasets")
+        DataGovExplorer.print_loaded("Found $(nrow(results)) datasets")
     end
 
-    if DataFrames.nrow(results) == 0
+    if nrow(results) == 0
         if !no_color
             DataGovExplorer.print_warning("No datasets found matching \"$query\"")
         else
@@ -156,7 +161,7 @@ function cmd_search(args::Dict)
     if !isempty(export_path)
         DataGovExplorer.export_data(results, export_path)
         if !no_color
-            DataGovExplorer.print_success("Exported $(DataFrames.nrow(results)) results to $export_path")
+            DataGovExplorer.print_success("Exported $(nrow(results)) results to $export_path")
         else
             println("Exported to $export_path")
         end
@@ -194,10 +199,10 @@ function cmd_org(args::Dict)
     results = DataGovExplorer.search_packages(client, fq="organization:\"$organization\"", rows=limit)
 
     if !no_color
-        DataGovExplorer.print_loaded("Found $(DataFrames.nrow(results)) datasets")
+        DataGovExplorer.print_loaded("Found $(nrow(results)) datasets")
     end
 
-    if DataFrames.nrow(results) == 0
+    if nrow(results) == 0
         if !no_color
             DataGovExplorer.print_warning("No datasets found for organization \"$organization\"")
         else
@@ -210,7 +215,7 @@ function cmd_org(args::Dict)
     if !isempty(export_path)
         DataGovExplorer.export_data(results, export_path)
         if !no_color
-            DataGovExplorer.print_success("Exported $(DataFrames.nrow(results)) results to $export_path")
+            DataGovExplorer.print_success("Exported $(nrow(results)) results to $export_path")
         else
             println("Exported to $export_path")
         end
@@ -248,10 +253,10 @@ function cmd_tag(args::Dict)
     results = DataGovExplorer.search_packages(client, fq="tags:\"$tag_name\"", rows=limit)
 
     if !no_color
-        DataGovExplorer.print_loaded("Found $(DataFrames.nrow(results)) datasets")
+        DataGovExplorer.print_loaded("Found $(nrow(results)) datasets")
     end
 
-    if DataFrames.nrow(results) == 0
+    if nrow(results) == 0
         if !no_color
             DataGovExplorer.print_warning("No datasets found with tag \"$tag_name\"")
         else
@@ -264,7 +269,7 @@ function cmd_tag(args::Dict)
     if !isempty(export_path)
         DataGovExplorer.export_data(results, export_path)
         if !no_color
-            DataGovExplorer.print_success("Exported $(DataFrames.nrow(results)) results to $export_path")
+            DataGovExplorer.print_success("Exported $(nrow(results)) results to $export_path")
         else
             println("Exported to $export_path")
         end
@@ -293,10 +298,10 @@ function cmd_recent(args::Dict)
     results = DataGovExplorer.search_packages(client, rows=limit)
 
     if !no_color
-        DataGovExplorer.print_loaded("Fetched $(DataFrames.nrow(results)) datasets")
+        DataGovExplorer.print_loaded("Fetched $(nrow(results)) datasets")
     end
 
-    if DataFrames.nrow(results) == 0
+    if nrow(results) == 0
         if !no_color
             DataGovExplorer.print_warning("No recent datasets found")
         else
@@ -309,7 +314,7 @@ function cmd_recent(args::Dict)
     if !isempty(export_path)
         DataGovExplorer.export_data(results, export_path)
         if !no_color
-            DataGovExplorer.print_success("Exported $(DataFrames.nrow(results)) results to $export_path")
+            DataGovExplorer.print_success("Exported $(nrow(results)) results to $export_path")
         else
             println("Exported to $export_path")
         end
@@ -337,10 +342,10 @@ function cmd_orgs(args::Dict)
     results = DataGovExplorer.get_organizations(client)
 
     if !no_color
-        DataGovExplorer.print_loaded("Fetched $(DataFrames.nrow(results)) organizations")
+        DataGovExplorer.print_loaded("Fetched $(nrow(results)) organizations")
     end
 
-    if DataFrames.nrow(results) == 0
+    if nrow(results) == 0
         if !no_color
             DataGovExplorer.print_warning("No organizations found")
         else
@@ -353,7 +358,7 @@ function cmd_orgs(args::Dict)
     if !isempty(export_path)
         DataGovExplorer.export_data(results, export_path)
         if !no_color
-            DataGovExplorer.print_success("Exported $(DataFrames.nrow(results)) results to $export_path")
+            DataGovExplorer.print_success("Exported $(nrow(results)) results to $export_path")
         else
             println("Exported to $export_path")
         end
