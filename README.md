@@ -424,12 +424,45 @@ API Documentation: https://docs.ckan.org/en/2.11/api/index.html
 
 ## Troubleshooting
 
+### DNS/Connection Issues
+
+If you encounter DNS errors like `DNSError: catalog.data.gov, unknown node or service (EAI_NONAME)`:
+
+This is a known issue with Julia's HTTP.jl DNS resolution on some systems. **Solutions:**
+
+**Option 1: Use environment variable (Recommended)**
+```bash
+# Set this environment variable before running
+export JULIA_NO_VERIFY_HOSTS="catalog.data.gov"
+
+# Then run normally
+julia run_explorer.jl
+```
+
+**Option 2: Add to your shell profile**
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+export JULIA_NO_VERIFY_HOSTS="catalog.data.gov"
+```
+
+**Option 3: Use with each command**
+```bash
+JULIA_NO_VERIFY_HOSTS="catalog.data.gov" julia run_explorer.jl search "climate"
+JULIA_NO_VERIFY_HOSTS="catalog.data.gov" julia run_explorer.jl interactive
+```
+
+**Option 4: Check your DNS settings**
+- Verify DNS is working: `ping catalog.data.gov`
+- Try flushing DNS cache: `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder` (macOS)
+- Temporarily switch to Google DNS (8.8.8.8) in System Settings
+
 ### Connection Issues
 
-If you encounter connection issues:
+If you encounter other connection issues:
 - Check your internet connection
-- Verify the data.gov API is accessible
+- Verify the data.gov API is accessible: `curl -I https://catalog.data.gov/api/3/action/organization_list`
 - Try increasing the `timeout` in configuration
+- Check if you're behind a corporate firewall or proxy
 
 ### API Errors
 
@@ -437,6 +470,7 @@ If you get API errors:
 - Check if the dataset name/ID is correct
 - Some datasets may have restricted access
 - Try again later if the API is under heavy load
+- Verify API status: https://catalog.data.gov/
 
 ### Performance Issues
 
@@ -444,6 +478,7 @@ If searches are slow:
 - Reduce the `rows` parameter
 - Use more specific search queries
 - Clear the cache: `client.cache = Dict()`
+- The API may fetch more data than requested during pagination
 
 ## Contributing
 
