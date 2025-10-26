@@ -27,9 +27,8 @@ if length(ARGS) == 0
     interactive_explorer()
 else
     # Arguments provided - use CLI mode
-    using Comonicon
     include("src/cli.jl")
 
-    # Let Comonicon handle the command-line arguments
-    Comonicon.@main
+    # Process CLI commands
+    cli_main(ARGS)
 end
