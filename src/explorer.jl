@@ -20,6 +20,9 @@ function interactive_explorer()
 
     client = CKANClient()
 
+    # Set colors based on config
+    set_colors_enabled(client.config.colors_enabled)
+
     while true
         println("\n" * "-"^70)
         println("MAIN MENU")

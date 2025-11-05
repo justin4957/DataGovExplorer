@@ -14,6 +14,7 @@ A Julia-based interactive CLI tool for exploring and downloading datasets from t
   - Search by keywords
   - View recent datasets
 - **Flexible Export**: Export catalog metadata to CSV, JSON, Excel, or Arrow formats
+- **Configuration Files**: Customize behavior via TOML or YAML config files
 - **Caching**: Built-in caching to reduce API calls and improve performance
 - **Rate Limiting**: Automatic rate limiting and retry logic with exponential backoff
 - **Error Handling**: Graceful error handling with helpful suggestions
@@ -139,6 +140,118 @@ export_to_arrow(results, "education.arrow")  # Efficient binary format
 export_to_xlsx(results, "education.xlsx")
 ```
 
+## Configuration
+
+DataGovExplorer supports configuration files for easy customization without code changes.
+
+### Configuration File Location
+
+Configuration files are loaded with the following precedence (highest to lowest):
+
+1. **Project-level**: `.datagov.toml` or `datagov.yml` in the current directory
+2. **User-level**: `~/.datagov.toml` or `~/.datagov.yml` in your home directory
+3. **Defaults**: Built-in default values
+
+### Configuration Options
+
+#### API Settings
+
+- `base_url` - CKAN API endpoint URL (default: `"https://catalog.data.gov/api/3"`)
+- `timeout` - Request timeout in seconds (default: `30`)
+- `max_retries` - Maximum retry attempts for failed requests (default: `3`)
+- `rate_limit_ms` - Minimum delay between requests in milliseconds (default: `500`)
+
+#### Default Settings
+
+- `page_size` - Results per page for paginated queries (default: `100`)
+- `export_format` - Default export format: `"csv"`, `"json"`, `"xlsx"`, or `"arrow"` (default: `"csv"`)
+
+#### UI Settings
+
+- `colors_enabled` - Enable/disable colored terminal output (default: `true`)
+
+### Example Configuration Files
+
+#### TOML Format (`.datagov.toml`)
+
+```toml
+[api]
+base_url = "https://catalog.data.gov/api/3"
+timeout = 30
+max_retries = 3
+rate_limit_ms = 500
+
+[defaults]
+export_format = "csv"
+page_size = 100
+
+[ui]
+colors_enabled = true
+```
+
+#### YAML Format (`.datagov.yml`)
+
+```yaml
+api:
+  base_url: "https://catalog.data.gov/api/3"
+  timeout: 30
+  max_retries: 3
+  rate_limit_ms: 500
+
+defaults:
+  export_format: "csv"
+  page_size: 100
+
+ui:
+  colors_enabled: true
+```
+
+### Using Configuration Files
+
+1. Copy the example configuration file:
+   ```bash
+   # For user-level config
+   cp datagov.toml.example ~/.datagov.toml
+   # OR
+   cp datagov.yml.example ~/.datagov.yml
+
+   # For project-level config
+   cp datagov.toml.example .datagov.toml
+   # OR
+   cp datagov.yml.example datagov.yml
+   ```
+
+2. Edit the configuration file with your preferences
+
+3. The configuration will be automatically loaded when you create a client:
+   ```julia
+   # Automatically loads from config file if available
+   client = CKANClient()
+   ```
+
+### Programmatic Configuration
+
+You can also configure the client programmatically, which takes precedence over config files:
+
+```julia
+# Load config from file
+config = load_config()
+
+# Or create custom config
+config = CKANConfig(
+    base_url="https://catalog.data.gov/api/3",
+    timeout=30,
+    rate_limit_ms=500,
+    max_retries=3,
+    page_size=100,
+    default_export_format="csv",
+    colors_enabled=true
+)
+
+# Use custom config
+client = CKANClient(config)
+```
+
 ## API Reference
 
 ### Client Configuration
@@ -256,6 +369,8 @@ The project follows a modular architecture similar to UNStatsExplorer:
 - **ProgressMeter.jl**: Progress bars
 - **StringDistances.jl**: Fuzzy matching (Jaro-Winkler)
 - **Crayons.jl**: ANSI color output
+- **TOML.jl**: TOML configuration file parsing
+- **YAML.jl**: YAML configuration file parsing
 
 ## CKAN API
 

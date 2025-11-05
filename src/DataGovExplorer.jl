@@ -12,8 +12,10 @@ using XLSX
 using JSONTables
 using StringDistances
 using Crayons
+using TOML
+using YAML
 
-export CKANClient, CKANConfig
+export CKANClient, CKANConfig, load_config
 export get_packages, get_package_details, get_organizations, get_groups, get_tags
 export search_packages, get_package_metadata
 export export_to_csv, export_to_json, export_to_arrow, export_to_xlsx

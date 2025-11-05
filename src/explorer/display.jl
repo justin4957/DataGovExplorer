@@ -3,6 +3,23 @@ Display utilities for the interactive explorer
 Handles table formatting and presentation
 """
 
+# Global flag for color support (can be configured via config file)
+const COLORS_ENABLED = Ref(true)
+
+"""
+Set whether colors are enabled for display
+"""
+function set_colors_enabled(enabled::Bool)
+    COLORS_ENABLED[] = enabled
+end
+
+"""
+Get color crayon if colors are enabled, otherwise return empty crayon
+"""
+function get_color(color_crayon::Crayon)
+    return COLORS_ENABLED[] ? color_crayon : Crayon()
+end
+
 # Color definitions for consistent styling
 const COLOR_SUCCESS = Crayon(foreground = :green, bold = true)
 const COLOR_ERROR = Crayon(foreground = :red, bold = true)
@@ -16,49 +33,49 @@ const COLOR_RESET = Crayon(reset = true)
 Print colored success message
 """
 function print_success(msg::String)
-    println(COLOR_SUCCESS, "✓ ", msg, COLOR_RESET)
+    println(get_color(COLOR_SUCCESS), "✓ ", msg, get_color(COLOR_RESET))
 end
 
 """
 Print colored error message
 """
 function print_error(msg::String)
-    println(COLOR_ERROR, "✗ ", msg, COLOR_RESET)
+    println(get_color(COLOR_ERROR), "✗ ", msg, get_color(COLOR_RESET))
 end
 
 """
 Print colored warning message
 """
 function print_warning(msg::String)
-    println(COLOR_WARNING, "⚠  ", msg, COLOR_RESET)
+    println(get_color(COLOR_WARNING), "⚠  ", msg, get_color(COLOR_RESET))
 end
 
 """
 Print colored info message
 """
 function print_info(msg::String)
-    println(COLOR_INFO, "ℹ  ", msg, COLOR_RESET)
+    println(get_color(COLOR_INFO), "ℹ  ", msg, get_color(COLOR_RESET))
 end
 
 """
 Print colored header
 """
 function print_header(text::String)
-    println(COLOR_HEADER, text, COLOR_RESET)
+    println(get_color(COLOR_HEADER), text, get_color(COLOR_RESET))
 end
 
 """
 Print colored highlight text
 """
 function print_highlight(text::String)
-    println(COLOR_HIGHLIGHT, text, COLOR_RESET)
+    println(get_color(COLOR_HIGHLIGHT), text, get_color(COLOR_RESET))
 end
 
 """
 Print loading message for long-running operation
 """
 function print_loading(msg::String)
-    print(COLOR_INFO, "⏳ ", msg, "...", COLOR_RESET)
+    print(get_color(COLOR_INFO), "⏳ ", msg, "...", get_color(COLOR_RESET))
     flush(stdout)
 end
 

@@ -1,0 +1,27 @@
+# DataGovExplorer Configuration File
+# Place this file as .datagov.yml in your home directory or project directory
+# Project-level config takes precedence over home directory config
+
+api:
+  # Base URL for the CKAN API endpoint
+  base_url: "https://catalog.data.gov/api/3"
+
+  # Request timeout in seconds
+  timeout: 30
+
+  # Maximum number of retry attempts for failed requests
+  max_retries: 3
+
+  # Minimum delay between API requests in milliseconds (rate limiting)
+  rate_limit_ms: 500
+
+defaults:
+  # Default export format: csv, json, xlsx, or arrow
+  export_format: "csv"
+
+  # Default page size for paginated results
+  page_size: 100
+
+ui:
+  # Enable/disable colored output in terminal
+  colors_enabled: true

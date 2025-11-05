@@ -7,13 +7,16 @@ mutable struct CKANClient
     cache::Dict{String, Any}
     headers::Dict{String, String}
 
-    function CKANClient(config::CKANConfig=CKANConfig())
+    function CKANClient(config::Union{CKANConfig, Nothing}=nothing)
+        # Load config from file if not provided
+        actual_config = isnothing(config) ? load_config() : config
+
         headers = Dict(
             "Content-Type" => "application/json",
             "Accept" => "application/json",
             "Accept-Encoding" => "gzip"
         )
-        new(config, 0.0, Dict{String, Any}(), headers)
+        new(actual_config, 0.0, Dict{String, Any}(), headers)
     end
 end
 
