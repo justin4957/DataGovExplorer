@@ -6,7 +6,9 @@ A Julia-based interactive CLI tool for exploring and downloading datasets from t
 
 ## Features
 
-- **Interactive CLI Explorer**: Menu-driven interface for browsing datasets
+- **Dual Operation Modes**:
+  - **Interactive Mode**: Menu-driven interface for browsing datasets
+  - **CLI Mode**: Non-interactive commands for automation and scripting
 - **Smart Search**: Fuzzy matching and auto-correction for dataset discovery
 - **Multiple Browse Modes**:
   - Browse by organization
@@ -14,9 +16,11 @@ A Julia-based interactive CLI tool for exploring and downloading datasets from t
   - Search by keywords
   - View recent datasets
 - **Flexible Export**: Export catalog metadata to CSV, JSON, Excel, or Arrow formats
+- **Flexible Output Formats**: Choose between table, JSON, CSV, or plain text output
 - **Caching**: Built-in caching to reduce API calls and improve performance
 - **Rate Limiting**: Automatic rate limiting and retry logic with exponential backoff
 - **Error Handling**: Graceful error handling with helpful suggestions
+- **Automation-Ready**: Perfect for CI/CD pipelines and batch operations
 
 ## Installation
 
@@ -53,6 +57,53 @@ using DataGovExplorer
 interactive_explorer()
 ```
 
+### CLI Mode (Non-Interactive)
+
+Search for datasets directly from the command line:
+```bash
+# Search for datasets
+julia run_explorer.jl search "climate data" --limit 20
+
+# Export results directly
+julia run_explorer.jl search "climate" --export climate.csv
+
+# Browse by organization
+julia run_explorer.jl org "Department of Commerce" --limit 50
+
+# Browse by tag
+julia run_explorer.jl tag "environment" --output json
+
+# View recent datasets
+julia run_explorer.jl recent --limit 10
+
+# List all organizations
+julia run_explorer.jl orgs --export organizations.csv
+```
+
+#### CLI Output Formats
+
+Control output format with the `--output` flag:
+```bash
+# Table format (default)
+julia run_explorer.jl search "health" --output table
+
+# JSON format (machine-readable)
+julia run_explorer.jl search "health" --output json
+
+# CSV format (pipe to other tools)
+julia run_explorer.jl search "health" --output csv
+
+# Plain text (simple list)
+julia run_explorer.jl search "health" --output plain
+```
+
+#### Disable Colors
+
+For piping or logging, use `--no-color`:
+```bash
+julia run_explorer.jl search "climate" --no-color --output json > results.json
+```
+
 ### Programmatic Usage
 
 ```julia
@@ -62,7 +113,7 @@ using DataGovExplorer
 client = CKANClient()
 
 # Search for datasets
-climate_data = search_packages(client, query="climate", rows=20)
+climate_data = search_packages(client, q="climate", rows=20)
 
 # Export results
 export_to_csv(climate_data, "climate_datasets.csv")
@@ -91,12 +142,22 @@ export_to_csv(results, "climate_datasets.csv")
 
 ### Example 2: Browse by Organization
 
+CLI mode:
+```bash
+# List all organizations
+julia run_explorer.jl orgs --export orgs.csv
+
+# Browse datasets from a specific organization
+julia run_explorer.jl org "NOAA" --limit 100 --export noaa_datasets.xlsx
+```
+
+Programmatic:
 ```julia
 # Get all organizations
 orgs = get_organizations(client)
 
 # Get datasets from a specific organization
-noaa_data = search_packages(client, organization="noaa-gov", rows=100)
+noaa_data = search_packages(client, fq="organization:\"noaa-gov\"", rows=100)
 
 # Export to Excel
 export_to_xlsx(noaa_data, "noaa_datasets.xlsx")
@@ -104,12 +165,22 @@ export_to_xlsx(noaa_data, "noaa_datasets.xlsx")
 
 ### Example 3: Browse by Tags
 
+CLI mode:
+```bash
+# Browse datasets by tag
+julia run_explorer.jl tag "health" --limit 50 --export health.json
+
+# Output as JSON for processing
+julia run_explorer.jl tag "covid-19" --output json
+```
+
+Programmatic:
 ```julia
 # Get all available tags
 tags = get_tags(client)
 
 # Find datasets with specific tags
-health_data = search_packages(client, tags=["health", "covid-19"], rows=50)
+health_data = search_packages(client, fq="tags:\"health\"", rows=50)
 
 # Export to JSON
 export_to_json(health_data, "health_datasets.json")
@@ -128,15 +199,46 @@ export_to_csv(metadata, "dataset_details.csv")
 
 ### Example 5: Multiple Format Export
 
+CLI mode:
+```bash
+# Export to different formats
+julia run_explorer.jl search "education" --limit 100 --export education.csv
+julia run_explorer.jl search "education" --limit 100 --export education.json
+julia run_explorer.jl search "education" --limit 100 --export education.xlsx
+julia run_explorer.jl search "education" --limit 100 --export education.arrow
+```
+
+Programmatic:
 ```julia
 # Search for datasets
-results = search_packages(client, query="education", rows=100)
+results = search_packages(client, q="education", rows=100)
 
 # Export to multiple formats
 export_to_csv(results, "education.csv")
 export_to_json(results, "education.json")
 export_to_arrow(results, "education.arrow")  # Efficient binary format
 export_to_xlsx(results, "education.xlsx")
+```
+
+### Example 6: Automation and Batch Operations
+
+Use CLI mode in shell scripts for automated data collection:
+```bash
+#!/bin/bash
+# collect_datasets.sh - Automated dataset collection
+
+# Collect datasets from different categories
+julia run_explorer.jl search "climate" --export data/climate.csv
+julia run_explorer.jl search "health" --export data/health.csv
+julia run_explorer.jl search "education" --export data/education.csv
+
+# Get recent datasets
+julia run_explorer.jl recent --limit 100 --export data/recent.json
+
+# Archive organizations
+julia run_explorer.jl orgs --export data/organizations.csv
+
+echo "Data collection complete!"
 ```
 
 ## API Reference
@@ -211,6 +313,7 @@ DataGovExplorer/
 │   ├── client.jl               # HTTP client with rate limiting
 │   ├── metadata.jl             # Metadata retrieval functions
 │   ├── exports.jl              # Export utilities
+│   ├── cli.jl                  # CLI command definitions
 │   ├── explorer.jl             # Interactive CLI main loop
 │   └── explorer/
 │       ├── display.jl          # Table formatting and colors
@@ -220,7 +323,7 @@ DataGovExplorer/
 │   ├── quick_start.jl          # Basic connectivity test
 │   └── basic_usage.jl          # Common usage patterns
 ├── Project.toml                # Package dependencies
-├── run_explorer.jl             # Interactive CLI launcher
+├── run_explorer.jl             # CLI launcher (interactive & non-interactive)
 └── README.md                   # This file
 ```
 
@@ -243,6 +346,45 @@ The project follows a modular architecture similar to UNStatsExplorer:
 5. **Minimal Overhead**: Efficient caching and resource usage
 6. **Progressive Disclosure**: Simple API with advanced options
 
+## CLI Commands Reference
+
+### `search <query>`
+Search for datasets by keyword
+- `--limit <N>`: Maximum number of results (default: 50)
+- `--export <file>`: Export results to file
+- `--output <format>`: Output format (table, json, csv, plain)
+- `--no-color`: Disable colored output
+
+### `org <organization>`
+Browse datasets from a specific organization
+- `--limit <N>`: Maximum number of results (default: 50)
+- `--export <file>`: Export results to file
+- `--output <format>`: Output format (table, json, csv, plain)
+- `--no-color`: Disable colored output
+
+### `tag <tag_name>`
+Browse datasets by tag
+- `--limit <N>`: Maximum number of results (default: 50)
+- `--export <file>`: Export results to file
+- `--output <format>`: Output format (table, json, csv, plain)
+- `--no-color`: Disable colored output
+
+### `recent`
+View recently updated datasets
+- `--limit <N>`: Maximum number of results (default: 20)
+- `--export <file>`: Export results to file
+- `--output <format>`: Output format (table, json, csv, plain)
+- `--no-color`: Disable colored output
+
+### `orgs`
+List all organizations
+- `--export <file>`: Export results to file
+- `--output <format>`: Output format (table, json, csv, plain)
+- `--no-color`: Disable colored output
+
+### `interactive`
+Launch interactive explorer mode
+
 ## Dependencies
 
 - **HTTP.jl**: HTTP client for API requests
@@ -256,6 +398,7 @@ The project follows a modular architecture similar to UNStatsExplorer:
 - **ProgressMeter.jl**: Progress bars
 - **StringDistances.jl**: Fuzzy matching (Jaro-Winkler)
 - **Crayons.jl**: ANSI color output
+- **Comonicon.jl**: Command-line interface framework
 
 ## CKAN API
 
@@ -281,12 +424,45 @@ API Documentation: https://docs.ckan.org/en/2.11/api/index.html
 
 ## Troubleshooting
 
+### DNS/Connection Issues
+
+If you encounter DNS errors like `DNSError: catalog.data.gov, unknown node or service (EAI_NONAME)`:
+
+This is a known issue with Julia's HTTP.jl DNS resolution on some systems. **Solutions:**
+
+**Option 1: Use environment variable (Recommended)**
+```bash
+# Set this environment variable before running
+export JULIA_NO_VERIFY_HOSTS="catalog.data.gov"
+
+# Then run normally
+julia run_explorer.jl
+```
+
+**Option 2: Add to your shell profile**
+```bash
+# Add to ~/.zshrc or ~/.bashrc
+export JULIA_NO_VERIFY_HOSTS="catalog.data.gov"
+```
+
+**Option 3: Use with each command**
+```bash
+JULIA_NO_VERIFY_HOSTS="catalog.data.gov" julia run_explorer.jl search "climate"
+JULIA_NO_VERIFY_HOSTS="catalog.data.gov" julia run_explorer.jl interactive
+```
+
+**Option 4: Check your DNS settings**
+- Verify DNS is working: `ping catalog.data.gov`
+- Try flushing DNS cache: `sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder` (macOS)
+- Temporarily switch to Google DNS (8.8.8.8) in System Settings
+
 ### Connection Issues
 
-If you encounter connection issues:
+If you encounter other connection issues:
 - Check your internet connection
-- Verify the data.gov API is accessible
+- Verify the data.gov API is accessible: `curl -I https://catalog.data.gov/api/3/action/organization_list`
 - Try increasing the `timeout` in configuration
+- Check if you're behind a corporate firewall or proxy
 
 ### API Errors
 
@@ -294,6 +470,7 @@ If you get API errors:
 - Check if the dataset name/ID is correct
 - Some datasets may have restricted access
 - Try again later if the API is under heavy load
+- Verify API status: https://catalog.data.gov/
 
 ### Performance Issues
 
@@ -301,6 +478,7 @@ If searches are slow:
 - Reduce the `rows` parameter
 - Use more specific search queries
 - Clear the cache: `client.cache = Dict()`
+- The API may fetch more data than requested during pagination
 
 ## Contributing
 
